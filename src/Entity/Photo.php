@@ -6,6 +6,8 @@ use ApiPlatform\Metadata\ApiResource;
 use App\Repository\PhotoRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\User;
+use App\Entity\Commerce;
 
 #[ORM\Entity(repositoryClass: PhotoRepository::class)]
 #[ApiResource]
@@ -22,18 +24,19 @@ class Photo
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $photo = null;
-
-    // Chaque photo appartient à un utilisateur (commerce)
+    // 🔹 Relation avec un commerce (photos d’un hôtel, resto…)
     #[ORM\ManyToOne(inversedBy: 'photos')]
-    #[ORM\JoinColumn(nullable: true)] // <- maintenant nullable
-    private ?User $commerce = null;
+    #[ORM\JoinColumn(nullable: true, onDelete: "CASCADE")]
+    private ?Commerce $commerce = null;
 
-    // Chaque photo peut aussi être liée à un commercant
+    // 🔹 Relation avec un utilisateur (photo de profil, par ex.)
     #[ORM\ManyToOne(inversedBy: 'photos')]
-    #[ORM\JoinColumn(nullable: true)] // <- nullable
-    private ?Commerce $commercant = null;
+    #[ORM\JoinColumn(nullable: true, onDelete: "CASCADE")]
+    private ?User $user = null;
+
+    // -----------------------
+    // Getters / Setters
+    // -----------------------
 
     public function getId(): ?int
     {
@@ -62,36 +65,25 @@ class Photo
         return $this;
     }
 
-    public function getPhoto(): ?string
-    {
-        return $this->photo;
-    }
-
-    public function setPhoto(?string $photo): static
-    {
-        $this->photo = $photo;
-        return $this;
-    }
-
-    public function getCommerce(): ?User
+    public function getCommerce(): ?Commerce
     {
         return $this->commerce;
     }
 
-    public function setCommerce(?User $commerce): static
+    public function setCommerce(?Commerce $commerce): static
     {
         $this->commerce = $commerce;
         return $this;
     }
 
-    public function getCommercant(): ?Commerce
+    public function getUser(): ?User
     {
-        return $this->commercant;
+        return $this->user;
     }
 
-    public function setCommercant(?Commerce $commercant): static
+    public function setUser(?User $user): static
     {
-        $this->commercant = $commercant;
+        $this->user = $user;
         return $this;
     }
 }

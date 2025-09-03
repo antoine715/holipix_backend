@@ -15,18 +15,21 @@ class Reservation
     #[ORM\Column]
     private ?int $id = null;
 
+    // 🔹 Relation vers User
     #[ORM\ManyToOne(inversedBy: 'reservations')]
-    private ?user $users = null;
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
+    // 🔹 Relation vers Commerce
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Commerce $commerce = null;
 
-    #[ORM\Column]
-    private ?\DateTime $dataArrivee = null;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeImmutable $dateArrivee = null;
 
-    #[ORM\Column]
-    private ?\DateTime $dateDepart = null;
+    #[ORM\Column(type: 'datetime_immutable')]
+    private ?\DateTimeImmutable $dateDepart = null;
 
     #[ORM\Column(nullable: true)]
     private ?int $nombreAdultes = null;
@@ -40,20 +43,23 @@ class Reservation
     #[ORM\Column]
     private ?float $total = null;
 
+    // ------------------
+    // Getters / Setters
+    // ------------------
+
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getUsers(): ?user
+    public function getUser(): ?User
     {
-        return $this->users;
+        return $this->user;
     }
 
-    public function setUsers(?user $users): static
+    public function setUser(?User $user): static
     {
-        $this->users = $users;
-
+        $this->user = $user;
         return $this;
     }
 
@@ -65,31 +71,28 @@ class Reservation
     public function setCommerce(?Commerce $commerce): static
     {
         $this->commerce = $commerce;
-
         return $this;
     }
 
-    public function getDataArrivee(): ?\DateTime
+    public function getDateArrivee(): ?\DateTimeImmutable
     {
-        return $this->dataArrivee;
+        return $this->dateArrivee;
     }
 
-    public function setDataArrivee(\DateTime $dataArrivee): static
+    public function setDateArrivee(\DateTimeImmutable $dateArrivee): static
     {
-        $this->dataArrivee = $dataArrivee;
-
+        $this->dateArrivee = $dateArrivee;
         return $this;
     }
 
-    public function getDateDepart(): ?\DateTime
+    public function getDateDepart(): ?\DateTimeImmutable
     {
         return $this->dateDepart;
     }
 
-    public function setDateDepart(\DateTime $dateDepart): static
+    public function setDateDepart(\DateTimeImmutable $dateDepart): static
     {
         $this->dateDepart = $dateDepart;
-
         return $this;
     }
 
@@ -101,7 +104,6 @@ class Reservation
     public function setNombreAdultes(?int $nombreAdultes): static
     {
         $this->nombreAdultes = $nombreAdultes;
-
         return $this;
     }
 
@@ -113,7 +115,6 @@ class Reservation
     public function setNombreEnfants(?int $nombreEnfants): static
     {
         $this->nombreEnfants = $nombreEnfants;
-
         return $this;
     }
 
@@ -125,7 +126,6 @@ class Reservation
     public function setNombreChambres(int $nombreChambres): static
     {
         $this->nombreChambres = $nombreChambres;
-
         return $this;
     }
 
@@ -137,7 +137,6 @@ class Reservation
     public function setTotal(float $total): static
     {
         $this->total = $total;
-
         return $this;
     }
 }
