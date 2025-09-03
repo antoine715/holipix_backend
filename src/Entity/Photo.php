@@ -25,12 +25,15 @@ class Photo
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $photo = null;
 
+    // Chaque photo appartient à un utilisateur (commerce)
     #[ORM\ManyToOne(inversedBy: 'photos')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?user $commerce = null;
+    #[ORM\JoinColumn(nullable: true)] // <- maintenant nullable
+    private ?User $commerce = null;
 
+    // Chaque photo peut aussi être liée à un commercant
     #[ORM\ManyToOne(inversedBy: 'photos')]
-    private ?commerce $commercant = null;
+    #[ORM\JoinColumn(nullable: true)] // <- nullable
+    private ?Commerce $commercant = null;
 
     public function getId(): ?int
     {
@@ -45,7 +48,6 @@ class Photo
     public function setUrl(string $url): static
     {
         $this->url = $url;
-
         return $this;
     }
 
@@ -57,7 +59,6 @@ class Photo
     public function setDescription(?string $description): static
     {
         $this->description = $description;
-
         return $this;
     }
 
@@ -69,31 +70,28 @@ class Photo
     public function setPhoto(?string $photo): static
     {
         $this->photo = $photo;
-
         return $this;
     }
 
-    public function getCommerce(): ?user
+    public function getCommerce(): ?User
     {
         return $this->commerce;
     }
 
-    public function setCommerce(?user $commerce): static
+    public function setCommerce(?User $commerce): static
     {
         $this->commerce = $commerce;
-
         return $this;
     }
 
-    public function getCommercant(): ?commerce
+    public function getCommercant(): ?Commerce
     {
         return $this->commercant;
     }
 
-    public function setCommercant(?commerce $commercant): static
+    public function setCommercant(?Commerce $commercant): static
     {
         $this->commercant = $commercant;
-
         return $this;
     }
 }
