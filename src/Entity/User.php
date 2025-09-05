@@ -2,276 +2,137 @@
 
 namespace App\Entity;
 
-use App\Repository\UserRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
-#[ORM\Entity(repositoryClass: UserRepository::class)]
-#[ORM\Table(name: '`user`')]
-#[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[ORM\Entity]
+#[ORM\Table(name: 'users')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\Column(length: 180)]
-    private ?string $email = null;
+    #[ORM\Column(type: 'string', length: 180, unique: true)]
+    private string $email;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'json')]
     private array $roles = [];
 
-    #[ORM\Column]
-    private ?string $password = null;
-
-    #[ORM\Column(type: 'string', length: 6, nullable: true)]
-    private ?string $verificationCode = null;
+    #[ORM\Column(type: 'string')]
+    private string $password;
 
     #[ORM\Column(type: 'boolean')]
     private bool $isVerified = false;
 
-    // 🔹 Relations
-    #[ORM\OneToMany(mappedBy: 'commercant', targetEntity: Commerce::class, cascade: ['persist', 'remove'])]
-    private Collection $commerces;
+    #[ORM\Column(type: 'string', length: 6, nullable: true)]
+    private ?string $verificationCode = null;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Reservation::class, cascade: ['persist', 'remove'])]
-    private Collection $reservations;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $verifiedAt = null;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Photo::class, cascade: ['persist', 'remove'])]
-    private Collection $photos;
+    // -----------------------------
+    // Getters / Setters
+    // -----------------------------
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Review::class)]
-    private Collection $reviews;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Payment::class)]
-    private Collection $payments;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Language::class)]
-    private Collection $languages;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Admin::class)]
-    private Collection $admins;
-
-    public function __construct()
-    {
-        $this->commerces = new ArrayCollection();
-        $this->reservations = new ArrayCollection();
-        $this->photos = new ArrayCollection();
-        $this->reviews = new ArrayCollection();
-        $this->payments = new ArrayCollection();
-        $this->languages = new ArrayCollection();
-        $this->admins = new ArrayCollection();
+    public function getId(): ?int 
+    { 
+        return $this->id; 
     }
 
-    // 🔹 Getters / Setters
-    public function getId(): ?int
-    {
-        return $this->id;
+    public function getEmail(): string 
+    { 
+        return $this->email; 
     }
 
-    public function getEmail(): ?string
-    {
-        return $this->email;
+    public function setEmail(string $email): self 
+    { 
+        $this->email = $email; 
+        return $this; 
     }
 
-    public function setEmail(string $email): static
+    public function getRoles(): array 
+    { 
+        return $this->roles; 
+    }
+
+    public function setRoles(array $roles): self 
+    { 
+        $this->roles = $roles; 
+        return $this; 
+    }
+
+    public function getPassword(): string 
+    { 
+        return $this->password; 
+    }
+
+    public function setPassword(string $password): self 
+    { 
+        $this->password = $password; 
+        return $this; 
+    }
+
+    public function getIsVerified(): bool 
+    { 
+        return $this->isVerified; 
+    }
+
+    public function setIsVerified(bool $isVerified): self 
+    { 
+        $this->isVerified = $isVerified; 
+        return $this; 
+    }
+
+    public function getVerificationCode(): ?string 
+    { 
+        return $this->verificationCode; 
+    }
+
+    public function setVerificationCode(?string $code): self 
+    { 
+        $this->verificationCode = $code; 
+        return $this; 
+    }
+
+    public function getVerifiedAt(): ?\DateTimeImmutable
     {
-        $this->email = $email;
+        return $this->verifiedAt;
+    }
+
+    public function setVerifiedAt(?\DateTimeImmutable $verifiedAt): self
+    {
+        $this->verifiedAt = $verifiedAt;
         return $this;
     }
 
-    public function getUserIdentifier(): string
-    {
-        return (string) $this->email;
-    }
+    // -----------------------------
+    // Helpers / Verification
+    // -----------------------------
 
-    public function getRoles(): array
-    {
-        $roles = $this->roles;
-        $roles[] = 'ROLE_USER';
-        return array_unique($roles);
-    }
-
-    public function setRoles(array $roles): static
-    {
-        $this->roles = $roles;
-        return $this;
-    }
-
-    public function getPassword(): ?string
-    {
-        return $this->password;
-    }
-
-    public function setPassword(string $password): static
-    {
-        $this->password = $password;
-        return $this;
-    }
-
-    public function getVerificationCode(): ?string
-    {
-        return $this->verificationCode;
-    }
-
-    public function setVerificationCode(?string $verificationCode): static
-    {
-        $this->verificationCode = $verificationCode;
-        return $this;
-    }
-
-    public function getIsVerified(): bool
+    // Pour pouvoir appeler $user->isVerified()
+    public function isVerified(): bool
     {
         return $this->isVerified;
     }
 
-    public function setIsVerified(bool $isVerified): static
+    // Confirme l'utilisateur
+    public function verify(): self
     {
-        $this->isVerified = $isVerified;
+        $this->isVerified = true;
+        $this->verificationCode = null;
+        $this->verifiedAt = new \DateTimeImmutable();
         return $this;
     }
 
-    #[\Deprecated]
-    public function eraseCredentials(): void
-    {
-        // @deprecated, à retirer en Symfony 8
-    }
+    // -----------------------------
+    // UserInterface / Security
+    // -----------------------------
 
-    // 🔹 Relations Getters / Adders / Removers
-    public function getCommerces(): Collection { return $this->commerces; }
-    public function addCommerce(Commerce $commerce): static
-    {
-        if (!$this->commerces->contains($commerce)) {
-            $this->commerces->add($commerce);
-            $commerce->setCommercant($this);
-        }
-        return $this;
-    }
-    public function removeCommerce(Commerce $commerce): static
-    {
-        if ($this->commerces->removeElement($commerce)) {
-            if ($commerce->getCommercant() === $this) {
-                $commerce->setCommercant(null);
-            }
-        }
-        return $this;
-    }
+    public function eraseCredentials() {}
 
-    public function getReservations(): Collection { return $this->reservations; }
-    public function addReservation(Reservation $reservation): static
-    {
-        if (!$this->reservations->contains($reservation)) {
-            $this->reservations->add($reservation);
-            $reservation->setUser($this);
-        }
-        return $this;
-    }
-    public function removeReservation(Reservation $reservation): static
-    {
-        if ($this->reservations->removeElement($reservation)) {
-            if ($reservation->getUser() === $this) {
-                $reservation->setUser(null);
-            }
-        }
-        return $this;
-    }
-
-    public function getPhotos(): Collection { return $this->photos; }
-    public function addPhoto(Photo $photo): static
-    {
-        if (!$this->photos->contains($photo)) {
-            $this->photos->add($photo);
-            $photo->setUser($this);
-        }
-        return $this;
-    }
-    public function removePhoto(Photo $photo): static
-    {
-        if ($this->photos->removeElement($photo)) {
-            if ($photo->getUser() === $this) {
-                $photo->setUser(null);
-            }
-        }
-        return $this;
-    }
-
-    public function getReviews(): Collection { return $this->reviews; }
-    public function addReview(Review $review): static
-    {
-        if (!$this->reviews->contains($review)) {
-            $this->reviews->add($review);
-            $review->setUser($this);
-        }
-        return $this;
-    }
-    public function removeReview(Review $review): static
-    {
-        if ($this->reviews->removeElement($review)) {
-            if ($review->getUser() === $this) {
-                $review->setUser(null);
-            }
-        }
-        return $this;
-    }
-
-    public function getPayments(): Collection { return $this->payments; }
-    public function addPayment(Payment $payment): static
-    {
-        if (!$this->payments->contains($payment)) {
-            $this->payments->add($payment);
-            $payment->setUser($this);
-        }
-        return $this;
-    }
-    public function removePayment(Payment $payment): static
-    {
-        if ($this->payments->removeElement($payment)) {
-            if ($payment->getUser() === $this) {
-                $payment->setUser(null);
-            }
-        }
-        return $this;
-    }
-
-    public function getLanguages(): Collection { return $this->languages; }
-    public function addLanguage(Language $language): static
-    {
-        if (!$this->languages->contains($language)) {
-            $this->languages->add($language);
-            $language->setUser($this);
-        }
-        return $this;
-    }
-    public function removeLanguage(Language $language): static
-    {
-        if ($this->languages->removeElement($language)) {
-            if ($language->getUser() === $this) {
-                $language->setUser(null);
-            }
-        }
-        return $this;
-    }
-
-    public function getAdmins(): Collection { return $this->admins; }
-    public function addAdmin(Admin $admin): static
-    {
-        if (!$this->admins->contains($admin)) {
-            $this->admins->add($admin);
-            $admin->setUser($this);
-        }
-        return $this;
-    }
-    public function removeAdmin(Admin $admin): static
-    {
-        if ($this->admins->removeElement($admin)) {
-            if ($admin->getUser() === $this) {
-                $admin->setUser(null);
-            }
-        }
-        return $this;
+    public function getUserIdentifier(): string 
+    { 
+        return $this->email; 
     }
 }
