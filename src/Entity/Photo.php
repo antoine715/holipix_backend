@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\PhotoRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Entity\User;
@@ -33,6 +35,17 @@ class Photo
     #[ORM\ManyToOne(inversedBy: 'photos')]
     #[ORM\JoinColumn(nullable: true, onDelete: "CASCADE")]
     private ?User $user = null;
+
+    /**
+     * @var Collection<int, Validation>
+     */
+    #[ORM\OneToMany(targetEntity: Validation::class, mappedBy: 'photo')]
+    private Collection $validations;
+
+    public function __construct()
+    {
+        $this->validations = new ArrayCollection();
+    }
 
     // -----------------------
     // Getters / Setters
@@ -84,6 +97,36 @@ class Photo
     public function setUser(?User $user): static
     {
         $this->user = $user;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Validation>
+     */
+    public function getValidations(): Collection
+    {
+        return $this->validations;
+    }
+
+    public function addValidation(Validation $validation): static
+    {
+        if (!$this->validations->contains($validation)) {
+            $this->validations->add($validation);
+            $validation->setPhoto($this);
+        }
+
+        return $this;
+    }
+
+    public function removeValidation(Validation $validation): static
+    {
+        if ($this->validations->removeElement($validation)) {
+            // set the owning side to null (unless already changed)
+            if ($validation->getPhoto() === $this) {
+                $validation->setPhoto(null);
+            }
+        }
+
         return $this;
     }
 }

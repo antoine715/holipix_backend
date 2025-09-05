@@ -38,11 +38,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Photo::class, cascade: ['persist', 'remove'])]
     private Collection $photos;
 
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Review::class, cascade: ['persist', 'remove'])]
+    private Collection $reviews;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Payment::class, cascade: ['persist', 'remove'])]
+    private Collection $payments;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Language::class, cascade: ['persist', 'remove'])]
+    private Collection $languages;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Admin::class, cascade: ['persist', 'remove'])]
+    private Collection $adminProfiles;
+
     public function __construct()
     {
         $this->commerces = new ArrayCollection();
         $this->reservations = new ArrayCollection();
         $this->photos = new ArrayCollection();
+        $this->reviews = new ArrayCollection();
+        $this->payments = new ArrayCollection();
+        $this->languages = new ArrayCollection();
+        $this->adminProfiles = new ArrayCollection();
     }
 
     // 🔹 Getters / Setters
@@ -70,6 +86,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
+        // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }
@@ -98,8 +115,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     // 🔹 Relations Getters / Adders / Removers
-
-    /** @return Collection<int, Commerce> */
     public function getCommerces(): Collection
     {
         return $this->commerces;
@@ -124,7 +139,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /** @return Collection<int, Reservation> */
     public function getReservations(): Collection
     {
         return $this->reservations;
@@ -149,7 +163,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /** @return Collection<int, Photo> */
     public function getPhotos(): Collection
     {
         return $this->photos;
@@ -169,6 +182,102 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->photos->removeElement($photo)) {
             if ($photo->getUser() === $this) {
                 $photo->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getReviews(): Collection
+    {
+        return $this->reviews;
+    }
+
+    public function addReview(Review $review): static
+    {
+        if (!$this->reviews->contains($review)) {
+            $this->reviews->add($review);
+            $review->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeReview(Review $review): static
+    {
+        if ($this->reviews->removeElement($review)) {
+            if ($review->getUser() === $this) {
+                $review->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getPayments(): Collection
+    {
+        return $this->payments;
+    }
+
+    public function addPayment(Payment $payment): static
+    {
+        if (!$this->payments->contains($payment)) {
+            $this->payments->add($payment);
+            $payment->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removePayment(Payment $payment): static
+    {
+        if ($this->payments->removeElement($payment)) {
+            if ($payment->getUser() === $this) {
+                $payment->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getLanguages(): Collection
+    {
+        return $this->languages;
+    }
+
+    public function addLanguage(Language $language): static
+    {
+        if (!$this->languages->contains($language)) {
+            $this->languages->add($language);
+            $language->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeLanguage(Language $language): static
+    {
+        if ($this->languages->removeElement($language)) {
+            if ($language->getUser() === $this) {
+                $language->setUser(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getAdminProfiles(): Collection
+    {
+        return $this->adminProfiles;
+    }
+
+    public function addAdminProfile(Admin $admin): static
+    {
+        if (!$this->adminProfiles->contains($admin)) {
+            $this->adminProfiles->add($admin);
+            $admin->setUser($this);
+        }
+        return $this;
+    }
+
+    public function removeAdminProfile(Admin $admin): static
+    {
+        if ($this->adminProfiles->removeElement($admin)) {
+            if ($admin->getUser() === $this) {
+                $admin->setUser(null);
             }
         }
         return $this;
