@@ -1,16 +1,22 @@
 security:
-  # Hashage des mots de passe
+  # 🔹 Hashage des mots de passe
   password_hashers:
     Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: "auto"
 
-  # User provider pour charger les utilisateurs depuis l'entity User
+  # 🔹 User provider pour charger les utilisateurs depuis l'entity User
   providers:
     app_user_provider:
       entity:
         class: App\Entity\User
         property: email
 
-  # Firewalls
+  # 🔹 Role hierarchy
+  role_hierarchy:
+    ROLE_SUPER_ADMIN: [ROLE_ADMIN, ROLE_USER]
+    ROLE_ADMIN: [ROLE_USER]
+    ROLE_COMMERCE: [ROLE_USER]
+
+  # 🔹 Firewalls
   firewalls:
     dev:
       pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -20,7 +26,7 @@ security:
       lazy: true
       provider: app_user_provider
 
-      # Méthodes d'authentification
+      # 🔹 Méthodes d'authentification
       form_login:
         login_path: login
         check_path: login
@@ -32,16 +38,17 @@ security:
         path: logout
         target: /
 
-      # Activer la fonctionnalité switch_user pour permettre à un super admin de se connecter comme un autre utilisateur
+      # 🔹 Permettre à un super admin de se connecter comme un autre utilisateur
       switch_user: true
 
-  # Contrôle d’accès par rôle
+  # 🔹 Contrôle d’accès par rôle
   access_control:
-    - { path: ^/admin, roles: ROLE_ADMIN }
-    - { path: ^/dashboard, roles: ROLE_USER }
     - { path: ^/super-admin, roles: ROLE_SUPER_ADMIN }
+    - { path: ^/admin, roles: ROLE_ADMIN }
+    - { path: ^/commerce, roles: ROLE_COMMERCE }
+    - { path: ^/dashboard, roles: ROLE_USER }
 
-# Configuration spécifique pour l'environnement de test
+# 🔹 Configuration spécifique pour l'environnement de test
 when@test:
   security:
     password_hashers:

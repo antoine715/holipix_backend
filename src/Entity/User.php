@@ -28,6 +28,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
+    #[ORM\Column(type: 'string', length: 6, nullable: true)]
+    private ?string $verificationCode = null;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $isVerified = false;
+
     // 🔹 Relations
     #[ORM\OneToMany(mappedBy: 'commercant', targetEntity: Commerce::class, cascade: ['persist', 'remove'])]
     private Collection $commerces;
@@ -38,17 +44,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: Photo::class, cascade: ['persist', 'remove'])]
     private Collection $photos;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Review::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Review::class)]
     private Collection $reviews;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Payment::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Payment::class)]
     private Collection $payments;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Language::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Language::class)]
     private Collection $languages;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Admin::class, cascade: ['persist', 'remove'])]
-    private Collection $adminProfiles;
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Admin::class)]
+    private Collection $admins;
 
     public function __construct()
     {
@@ -58,7 +64,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->reviews = new ArrayCollection();
         $this->payments = new ArrayCollection();
         $this->languages = new ArrayCollection();
-        $this->adminProfiles = new ArrayCollection();
+        $this->admins = new ArrayCollection();
     }
 
     // 🔹 Getters / Setters
@@ -86,7 +92,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }
@@ -108,6 +113,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function getVerificationCode(): ?string
+    {
+        return $this->verificationCode;
+    }
+
+    public function setVerificationCode(?string $verificationCode): static
+    {
+        $this->verificationCode = $verificationCode;
+        return $this;
+    }
+
+    public function getIsVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function setIsVerified(bool $isVerified): static
+    {
+        $this->isVerified = $isVerified;
+        return $this;
+    }
+
     #[\Deprecated]
     public function eraseCredentials(): void
     {
@@ -115,11 +142,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     // 🔹 Relations Getters / Adders / Removers
-    public function getCommerces(): Collection
-    {
-        return $this->commerces;
-    }
-
+    public function getCommerces(): Collection { return $this->commerces; }
     public function addCommerce(Commerce $commerce): static
     {
         if (!$this->commerces->contains($commerce)) {
@@ -128,7 +151,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
-
     public function removeCommerce(Commerce $commerce): static
     {
         if ($this->commerces->removeElement($commerce)) {
@@ -139,11 +161,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getReservations(): Collection
-    {
-        return $this->reservations;
-    }
-
+    public function getReservations(): Collection { return $this->reservations; }
     public function addReservation(Reservation $reservation): static
     {
         if (!$this->reservations->contains($reservation)) {
@@ -152,7 +170,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
-
     public function removeReservation(Reservation $reservation): static
     {
         if ($this->reservations->removeElement($reservation)) {
@@ -163,11 +180,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPhotos(): Collection
-    {
-        return $this->photos;
-    }
-
+    public function getPhotos(): Collection { return $this->photos; }
     public function addPhoto(Photo $photo): static
     {
         if (!$this->photos->contains($photo)) {
@@ -176,7 +189,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
-
     public function removePhoto(Photo $photo): static
     {
         if ($this->photos->removeElement($photo)) {
@@ -187,11 +199,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getReviews(): Collection
-    {
-        return $this->reviews;
-    }
-
+    public function getReviews(): Collection { return $this->reviews; }
     public function addReview(Review $review): static
     {
         if (!$this->reviews->contains($review)) {
@@ -200,7 +208,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
-
     public function removeReview(Review $review): static
     {
         if ($this->reviews->removeElement($review)) {
@@ -211,11 +218,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPayments(): Collection
-    {
-        return $this->payments;
-    }
-
+    public function getPayments(): Collection { return $this->payments; }
     public function addPayment(Payment $payment): static
     {
         if (!$this->payments->contains($payment)) {
@@ -224,7 +227,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
-
     public function removePayment(Payment $payment): static
     {
         if ($this->payments->removeElement($payment)) {
@@ -235,11 +237,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getLanguages(): Collection
-    {
-        return $this->languages;
-    }
-
+    public function getLanguages(): Collection { return $this->languages; }
     public function addLanguage(Language $language): static
     {
         if (!$this->languages->contains($language)) {
@@ -248,7 +246,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
         return $this;
     }
-
     public function removeLanguage(Language $language): static
     {
         if ($this->languages->removeElement($language)) {
@@ -259,23 +256,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getAdminProfiles(): Collection
+    public function getAdmins(): Collection { return $this->admins; }
+    public function addAdmin(Admin $admin): static
     {
-        return $this->adminProfiles;
-    }
-
-    public function addAdminProfile(Admin $admin): static
-    {
-        if (!$this->adminProfiles->contains($admin)) {
-            $this->adminProfiles->add($admin);
+        if (!$this->admins->contains($admin)) {
+            $this->admins->add($admin);
             $admin->setUser($this);
         }
         return $this;
     }
-
-    public function removeAdminProfile(Admin $admin): static
+    public function removeAdmin(Admin $admin): static
     {
-        if ($this->adminProfiles->removeElement($admin)) {
+        if ($this->admins->removeElement($admin)) {
             if ($admin->getUser() === $this) {
                 $admin->setUser(null);
             }
