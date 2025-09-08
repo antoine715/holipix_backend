@@ -196,5 +196,51 @@ class RegistrationController extends AbstractController
                 'verified_at' => $user->getVerifiedAt()->format('Y-m-d H:i:s')
             ]);
         }
+        #[Route('/resend-code', name: 'app_resend_code', methods: ['POST'])]
+        public function resendCode(Request $request, EntityManagerInterface $em, MailerInterface $mailer): Response
+        {
+            $data = json_decode($request->getContent(), true);
+
+            if (!is_array($data)) {
+                return $this->json(['message' => 'Données invalides'], 400);
+            }
+
+            $email = $data['email'] ?? null;
+            if (!$email) {
+                return $this->json(['message' => 'Email est obligatoire'], 400);
+            }
+
+            $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+            if (!$user) {
+                return $this->json(['message' => 'Utilisateur introuvable'], 404);
+            }
+
+            if ($user->isVerified()) {
+                return $this->json(['message' => 'Ce compte est déjà vérifié'], 400);
+            }
+
+            $code = bin2hex(random_bytes(3));
+            $user->setVerificationCode($code);
+
+            $em->persist($user);
+            $em->flush();
+
+            try {
+                $emailMessage = (new Email())
+                    ->from('noreply@holipix.com')
+                    ->to($user->getEmail())
+                    ->subject('Nouveau code de vérification')
+                    ->text("Votre nouveau code de vérification : $code");
+
+                $mailer->send($emailMessage);
+            } catch (\Exception $e) {
+                return $this->json([
+                    'message' => 'Impossible d’envoyer l’email. Erreur : ' . $e->getMessage()
+                ], 500);
+            }
+
+            return $this->json(['message' => 'Nouveau code envoyé par email']);
+        }
+
 
 }

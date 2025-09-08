@@ -15,12 +15,10 @@ class Reservation
     #[ORM\Column]
     private ?int $id = null;
 
-    // 🔹 Relation vers User
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $user = null;
 
-    // 🔹 Relation vers Commerce
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Commerce $commerce = null;
@@ -46,117 +44,28 @@ class Reservation
     #[ORM\OneToOne(mappedBy: 'reservation', cascade: ['persist', 'remove'])]
     private ?Payment $payment = null;
 
-    // ------------------
-    // Getters / Setters
-    // ------------------
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function getUser(): ?User
-    {
-        return $this->user;
-    }
-
-    public function setUser(?User $user): static
-    {
-        $this->user = $user;
-        return $this;
-    }
-
-    public function getCommerce(): ?Commerce
-    {
-        return $this->commerce;
-    }
-
-    public function setCommerce(?Commerce $commerce): static
-    {
-        $this->commerce = $commerce;
-        return $this;
-    }
-
-    public function getDateArrivee(): ?\DateTimeImmutable
-    {
-        return $this->dateArrivee;
-    }
-
-    public function setDateArrivee(\DateTimeImmutable $dateArrivee): static
-    {
-        $this->dateArrivee = $dateArrivee;
-        return $this;
-    }
-
-    public function getDateDepart(): ?\DateTimeImmutable
-    {
-        return $this->dateDepart;
-    }
-
-    public function setDateDepart(\DateTimeImmutable $dateDepart): static
-    {
-        $this->dateDepart = $dateDepart;
-        return $this;
-    }
-
-    public function getNombreAdultes(): ?int
-    {
-        return $this->nombreAdultes;
-    }
-
-    public function setNombreAdultes(?int $nombreAdultes): static
-    {
-        $this->nombreAdultes = $nombreAdultes;
-        return $this;
-    }
-
-    public function getNombreEnfants(): ?int
-    {
-        return $this->nombreEnfants;
-    }
-
-    public function setNombreEnfants(?int $nombreEnfants): static
-    {
-        $this->nombreEnfants = $nombreEnfants;
-        return $this;
-    }
-
-    public function getNombreChambres(): ?int
-    {
-        return $this->nombreChambres;
-    }
-
-    public function setNombreChambres(int $nombreChambres): static
-    {
-        $this->nombreChambres = $nombreChambres;
-        return $this;
-    }
-
-    public function getTotal(): ?float
-    {
-        return $this->total;
-    }
-
-    public function setTotal(float $total): static
-    {
-        $this->total = $total;
-        return $this;
-    }
-
-    public function getPayment(): ?Payment
-    {
-        return $this->payment;
-    }
-
+    public function getId(): ?int { return $this->id; }
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
+    public function getCommerce(): ?Commerce { return $this->commerce; }
+    public function setCommerce(?Commerce $commerce): static { $this->commerce = $commerce; return $this; }
+    public function getDateArrivee(): ?\DateTimeImmutable { return $this->dateArrivee; }
+    public function setDateArrivee(\DateTimeImmutable $dateArrivee): static { $this->dateArrivee = $dateArrivee; return $this; }
+    public function getDateDepart(): ?\DateTimeImmutable { return $this->dateDepart; }
+    public function setDateDepart(\DateTimeImmutable $dateDepart): static { $this->dateDepart = $dateDepart; return $this; }
+    public function getNombreAdultes(): ?int { return $this->nombreAdultes; }
+    public function setNombreAdultes(?int $nombreAdultes): static { $this->nombreAdultes = $nombreAdultes; return $this; }
+    public function getNombreEnfants(): ?int { return $this->nombreEnfants; }
+    public function setNombreEnfants(?int $nombreEnfants): static { $this->nombreEnfants = $nombreEnfants; return $this; }
+    public function getNombreChambres(): ?int { return $this->nombreChambres; }
+    public function setNombreChambres(int $nombreChambres): static { $this->nombreChambres = $nombreChambres; return $this; }
+    public function getTotal(): ?float { return $this->total; }
+    public function setTotal(float $total): static { $this->total = $total; return $this; }
+    public function getPayment(): ?Payment { return $this->payment; }
     public function setPayment(Payment $payment): static
     {
-        // set the owning side of the relation if necessary
-        if ($payment->getReservation() !== $this) {
-            $payment->setReservation($this);
-        }
-
+        if ($payment->getReservation() !== $this) $payment->setReservation($this);
         $this->payment = $payment;
-
         return $this;
     }
 }

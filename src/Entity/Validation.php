@@ -29,56 +29,17 @@ class Validation
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $validatedAt = null;
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getPhoto(): ?Photo
-    {
-        return $this->photo;
-    }
+    public function getPhoto(): ?Photo { return $this->photo; }
+    public function setPhoto(?Photo $photo): static { $this->photo = $photo; return $this; }
 
-    public function setPhoto(?Photo $photo): static
-    {
-        $this->photo = $photo;
+    public function getAdmin(): ?Admin { return $this->admin; }
+    public function setAdmin(?Admin $admin): static { $this->admin = $admin; return $this; }
 
-        return $this;
-    }
+    public function getStatus(): ?string { return $this->status; }
+    public function setStatus(string $status): static { $this->status = $status; return $this; }
 
-    public function getAdmin(): ?Admin
-    {
-        return $this->admin;
-    }
-
-    public function setAdmin(?Admin $admin): static
-    {
-        $this->admin = $admin;
-
-        return $this;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(string $status): static
-    {
-        $this->status = $status;
-
-        return $this;
-    }
-
-    public function getValidatedAt(): ?\DateTimeImmutable
-    {
-        return $this->validatedAt;
-    }
-
-    public function setValidatedAt(?\DateTimeImmutable $validatedAt): static
-    {
-        $this->validatedAt = $validatedAt;
-
-        return $this;
-    }
+    public function getValidatedAt(): ?\DateTimeImmutable { return $this->validatedAt; }
+    public function setValidatedAt(?\DateTimeImmutable $validatedAt): static { $this->validatedAt = $validatedAt; return $this; }
 }

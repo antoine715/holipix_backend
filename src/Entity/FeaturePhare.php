@@ -26,44 +26,11 @@ class FeaturePhare
     #[ORM\JoinColumn(nullable: false)]
     private ?Commerce $commerce = null;
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
-
-    public function setName(string $name): static
-    {
-        $this->name = $name;
-
-        return $this;
-    }
-
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
-
-        return $this;
-    }
-
-    public function getCommerce(): ?Commerce
-    {
-        return $this->commerce;
-    }
-
-    public function setCommerce(?Commerce $commerce): static
-    {
-        $this->commerce = $commerce;
-
-        return $this;
-    }
+    public function getId(): ?int { return $this->id; }
+    public function getName(): ?string { return $this->name; }
+    public function setName(string $name): static { $this->name = $name; return $this; }
+    public function getDescription(): ?string { return $this->description; }
+    public function setDescription(?string $description): static { $this->description = $description; return $this; }
+    public function getCommerce(): ?Commerce { return $this->commerce; }
+    public function setCommerce(?Commerce $commerce): static { $this->commerce = $commerce; return $this; }
 }

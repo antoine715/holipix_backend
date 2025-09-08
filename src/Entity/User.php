@@ -2,12 +2,19 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'users')]
+#[ApiResource(
+    normalizationContext: ['groups' => ['user:read']],
+    denormalizationContext: ['groups' => ['user:write']]
+)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id, ORM\GeneratedValue, ORM\Column(type: 'integer')]
@@ -31,92 +38,56 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $verifiedAt = null;
 
-    // -----------------------------
-    // Getters / Setters
-    // -----------------------------
+    #[ORM\OneToOne(mappedBy: 'commercant', targetEntity: Commerce::class, cascade: ['persist', 'remove'])]
+    private ?Commerce $commerce = null;
 
-    public function getId(): ?int 
-    { 
-        return $this->id; 
-    }
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Reservation::class)]
+    private Collection $reservations;
 
-    public function getEmail(): string 
-    { 
-        return $this->email; 
-    }
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Payment::class)]
+    private Collection $payments;
 
-    public function setEmail(string $email): self 
-    { 
-        $this->email = $email; 
-        return $this; 
-    }
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Photo::class)]
+    private Collection $photos;
 
-    public function getRoles(): array 
-    { 
-        return $this->roles; 
-    }
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Review::class)]
+    private Collection $reviews;
 
-    public function setRoles(array $roles): self 
-    { 
-        $this->roles = $roles; 
-        return $this; 
-    }
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Language::class)]
+    private Collection $languages;
 
-    public function getPassword(): string 
-    { 
-        return $this->password; 
-    }
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Admin::class)]
+    private Collection $admins;
 
-    public function setPassword(string $password): self 
-    { 
-        $this->password = $password; 
-        return $this; 
-    }
-
-    public function getIsVerified(): bool 
-    { 
-        return $this->isVerified; 
-    }
-
-    public function setIsVerified(bool $isVerified): self 
-    { 
-        $this->isVerified = $isVerified; 
-        return $this; 
-    }
-
-    public function getVerificationCode(): ?string 
-    { 
-        return $this->verificationCode; 
-    }
-
-    public function setVerificationCode(?string $code): self 
-    { 
-        $this->verificationCode = $code; 
-        return $this; 
-    }
-
-    public function getVerifiedAt(): ?\DateTimeImmutable
+    public function __construct()
     {
-        return $this->verifiedAt;
+        $this->reservations = new ArrayCollection();
+        $this->payments = new ArrayCollection();
+        $this->photos = new ArrayCollection();
+        $this->reviews = new ArrayCollection();
+        $this->languages = new ArrayCollection();
+        $this->admins = new ArrayCollection();
     }
 
-    public function setVerifiedAt(?\DateTimeImmutable $verifiedAt): self
-    {
-        $this->verifiedAt = $verifiedAt;
-        return $this;
-    }
+    public function getId(): ?int { return $this->id; }
+    public function getEmail(): string { return $this->email; }
+    public function setEmail(string $email): self { $this->email = $email; return $this; }
 
-    // -----------------------------
-    // Helpers / Verification
-    // -----------------------------
+    public function getRoles(): array { return $this->roles; }
+    public function setRoles(array $roles): self { $this->roles = $roles; return $this; }
 
-    // Pour pouvoir appeler $user->isVerified()
-    public function isVerified(): bool
-    {
-        return $this->isVerified;
-    }
+    public function getPassword(): string { return $this->password; }
+    public function setPassword(string $password): self { $this->password = $password; return $this; }
 
-    // Confirme l'utilisateur
+    public function isVerified(): bool { return $this->isVerified; }
+    public function setIsVerified(bool $isVerified): self { $this->isVerified = $isVerified; return $this; }
+
+    public function getVerificationCode(): ?string { return $this->verificationCode; }
+    public function setVerificationCode(?string $code): self { $this->verificationCode = $code; return $this; }
+
+    public function getVerifiedAt(): ?\DateTimeImmutable { return $this->verifiedAt; }
+    public function setVerifiedAt(?\DateTimeImmutable $dt): self { $this->verifiedAt = $dt; return $this; }
+
     public function verify(): self
     {
         $this->isVerified = true;
@@ -125,14 +96,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // -----------------------------
-    // UserInterface / Security
-    // -----------------------------
-
     public function eraseCredentials() {}
+    public function getUserIdentifier(): string { return $this->email; }
 
-    public function getUserIdentifier(): string 
-    { 
-        return $this->email; 
+    public function getCommerce(): ?Commerce { return $this->commerce; }
+    public function setCommerce(?Commerce $commerce): self
+    {
+        $this->commerce = $commerce;
+        return $this;
     }
 }

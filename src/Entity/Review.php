@@ -26,73 +26,31 @@ class Review
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'reviews')]
-    private ?user $user = null;
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
     #[ORM\ManyToOne(inversedBy: 'reviews')]
+    #[ORM\JoinColumn(nullable: false)]
     private ?Commerce $commerce = null;
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    // -----------------------
+    // Getters / Setters
+    // -----------------------
 
-    public function getRating(): ?int
-    {
-        return $this->rating;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function setRating(int $rating): static
-    {
-        $this->rating = $rating;
+    public function getRating(): ?int { return $this->rating; }
+    public function setRating(int $rating): static { $this->rating = $rating; return $this; }
 
-        return $this;
-    }
+    public function getComment(): ?string { return $this->comment; }
+    public function setComment(?string $comment): static { $this->comment = $comment; return $this; }
 
-    public function getComment(): ?string
-    {
-        return $this->comment;
-    }
+    public function getCreatedAt(): ?\DateTimeImmutable { return $this->createdAt; }
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static { $this->createdAt = $createdAt; return $this; }
 
-    public function setComment(?string $comment): static
-    {
-        $this->comment = $comment;
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
 
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function getUser(): ?user
-    {
-        return $this->user;
-    }
-
-    public function setUser(?user $user): static
-    {
-        $this->user = $user;
-
-        return $this;
-    }
-
-    public function getCommerce(): ?Commerce
-    {
-        return $this->commerce;
-    }
-
-    public function setCommerce(?Commerce $commerce): static
-    {
-        $this->commerce = $commerce;
-
-        return $this;
-    }
+    public function getCommerce(): ?Commerce { return $this->commerce; }
+    public function setCommerce(?Commerce $commerce): static { $this->commerce = $commerce; return $this; }
 }
