@@ -1,16 +1,17 @@
+# config/packages/security.yaml
 security:
   # 🔹 Hashage des mots de passe
   password_hashers:
     Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: "auto"
 
-  # 🔹 User provider pour charger les utilisateurs depuis l'entity User
+  # 🔹 User provider
   providers:
     app_user_provider:
       entity:
         class: App\Entity\User
         property: email
 
-  # 🔹 Role hierarchy
+  # 🔹 Hiérarchie des rôles
   role_hierarchy:
     ROLE_SUPER_ADMIN: [ROLE_ADMIN, ROLE_USER]
     ROLE_ADMIN: [ROLE_USER]
@@ -25,28 +26,39 @@ security:
     main:
       lazy: true
       provider: app_user_provider
+      stateless: true
 
-      # 🔹 Méthodes d'authentification
-      form_login:
-        login_path: login
-        check_path: login
-        default_target_path: dashboard
-        username_parameter: email
-        password_parameter: password
+      # 🔹 Authentification via JSON login
+      json_login:
+        check_path: /api/login
+        username_path: email
+        password_path: password
+        success_handler: App\Security\LoginSuccessHandler
+        failure_handler: App\Security\LoginFailureHandler
 
-      logout:
-        path: logout
-        target: /
+      # 🔹 JWT authenticator pour toutes les routes protégées
+      jwt: ~
 
-      # 🔹 Permettre à un super admin de se connecter comme un autre utilisateur
+      # 🔹 Optionnel : super admin peut switcher user
       switch_user: true
 
   # 🔹 Contrôle d’accès par rôle
   access_control:
+    # Super admin
     - { path: ^/super-admin, roles: ROLE_SUPER_ADMIN }
+    # Admin
     - { path: ^/admin, roles: ROLE_ADMIN }
+    # Commerce
     - { path: ^/commerce, roles: ROLE_COMMERCE }
+    # Tout utilisateur connecté
     - { path: ^/dashboard, roles: ROLE_USER }
+    - { path: ^/commerce/dashboard, roles: ROLE_COMMERCE }
+    # Pages accessibles sans authentification
+    - { path: ^/api/login, roles: PUBLIC_ACCESS }
+    - { path: ^/register, roles: PUBLIC_ACCESS }
+    - { path: ^/register/commerce, roles: PUBLIC_ACCESS }
+    - { path: ^/verify-email, roles: PUBLIC_ACCESS }
+    - { path: ^/resend-code, roles: PUBLIC_ACCESS }
 
 # 🔹 Configuration spécifique pour l'environnement de test
 when@test:
@@ -54,6 +66,6 @@ when@test:
     password_hashers:
       Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
         algorithm: auto
-        cost: 4 # bcrypt lowest
-        time_cost: 3 # argon2 lowest
+        cost: 4 # bcrypt minimal
+        time_cost: 3 # argon2 minimal
         memory_cost: 10

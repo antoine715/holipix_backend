@@ -7,7 +7,7 @@ use App\Entity\Commerce;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Mailer\MailerInterface;
@@ -15,47 +15,48 @@ use Symfony\Component\Mime\Email;
 
 class RegistrationController extends AbstractController
 {
+    private function getJsonData(Request $request): ?array
+    {
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return null;
+        }
+        return $data;
+    }
+
     #[Route('/register', name: 'app_register', methods: ['POST'])]
     public function register(
         Request $request,
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface $em,
         MailerInterface $mailer
-    ): Response {
-        $data = json_decode($request->getContent(), true);
+    ): JsonResponse {
+        $data = $this->getJsonData($request);
+        if (!$data) {
+            return $this->json(['message' => 'JSON invalide'], 400);
+        }
 
         $email           = $data['email'] ?? null;
         $password        = $data['password'] ?? null;
         $confirmPassword = $data['confirmPassword'] ?? null;
 
         if (!$email || !$password || !$confirmPassword) {
-            return $this->json([
-                'message' => 'Email, password et confirmPassword sont obligatoires'
-            ], 400);
+            return $this->json(['message' => 'Email, password et confirmPassword sont obligatoires'], 400);
         }
 
         if ($password !== $confirmPassword) {
-            return $this->json([
-                'message' => 'Les mots de passe ne correspondent pas'
-            ], 400);
+            return $this->json(['message' => 'Les mots de passe ne correspondent pas'], 400);
         }
 
-        // Vérification de la force du mot de passe
         $pattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/';
         if (!preg_match($pattern, $password)) {
-            return $this->json([
-                'message' => 'Mot de passe invalide'
-            ], 400);
+            return $this->json(['message' => 'Mot de passe invalide (8 caractères, majuscule, minuscule, chiffre, caractère spécial)'], 400);
         }
 
-        // Vérification si email déjà existant
         if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
-            return $this->json([
-                'message' => 'Email déjà utilisé'
-            ], 400);
+            return $this->json(['message' => 'Email déjà utilisé'], 400);
         }
 
-        // Création de l’utilisateur
         $user = new User();
         $user->setEmail($email);
         $user->setPassword($passwordHasher->hashPassword($user, $password));
@@ -66,7 +67,6 @@ class RegistrationController extends AbstractController
         $em->persist($user);
         $em->flush();
 
-        // Envoi email de vérification
         $emailMessage = (new Email())
             ->from('noreply@holipix.com')
             ->to($user->getEmail())
@@ -87,41 +87,33 @@ class RegistrationController extends AbstractController
         UserPasswordHasherInterface $passwordHasher,
         EntityManagerInterface $em,
         MailerInterface $mailer
-    ): Response {
-        $data = json_decode($request->getContent(), true);
+    ): JsonResponse {
+        $data = $this->getJsonData($request);
+        if (!$data) {
+            return $this->json(['message' => 'JSON invalide'], 400);
+        }
 
         $email           = $data['email'] ?? null;
         $password        = $data['password'] ?? null;
         $confirmPassword = $data['confirmPassword'] ?? null;
 
         if (!$email || !$password || !$confirmPassword) {
-            return $this->json([
-                'message' => 'Email, password et confirmPassword obligatoires'
-            ], 400);
+            return $this->json(['message' => 'Email, password et confirmPassword sont obligatoires'], 400);
         }
 
         if ($password !== $confirmPassword) {
-            return $this->json([
-                'message' => 'Les mots de passe ne correspondent pas'
-            ], 400);
+            return $this->json(['message' => 'Les mots de passe ne correspondent pas'], 400);
         }
 
-        // Vérification de la force du mot de passe
         $pattern = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/';
         if (!preg_match($pattern, $password)) {
-            return $this->json([
-                'message' => 'Mot de passe invalide'
-            ], 400);
+            return $this->json(['message' => 'Mot de passe invalide (8 caractères, majuscule, minuscule, chiffre, caractère spécial)'], 400);
         }
 
-        // Vérification si email déjà existant
         if ($em->getRepository(User::class)->findOneBy(['email' => $email])) {
-            return $this->json([
-                'message' => 'Email déjà utilisé'
-            ], 400);
+            return $this->json(['message' => 'Email déjà utilisé'], 400);
         }
 
-        // Création de l’utilisateur commerce
         $user = new User();
         $user->setEmail($email);
         $user->setPassword($passwordHasher->hashPassword($user, $password));
@@ -129,7 +121,6 @@ class RegistrationController extends AbstractController
         $user->setVerificationCode(bin2hex(random_bytes(3)));
         $user->setIsVerified(false);
 
-        // Création du commerce
         $commerce = new Commerce();
         $commerce->setCommercant($user);
         $commerce->setName($data['nom'] ?? '');
@@ -145,7 +136,6 @@ class RegistrationController extends AbstractController
         $em->persist($commerce);
         $em->flush();
 
-        // Envoi email de vérification
         $emailMessage = (new Email())
             ->from('noreply@holipix.com')
             ->to($user->getEmail())
@@ -160,87 +150,80 @@ class RegistrationController extends AbstractController
             'commerce_id' => $commerce->getId(),
         ]);
     }
-        #[Route('/verify-email', name: 'app_verify_email', methods: ['POST'])]
-        public function verifyEmail(Request $request, EntityManagerInterface $em): Response
-        {
-            $data = json_decode($request->getContent(), true);
 
-            $email = $data['email'] ?? null;
-            $code  = $data['code'] ?? null;
-
-            if (!$email || !$code) {
-                return $this->json(['message' => 'Email et code sont obligatoires'], 400);
-            }
-
-            $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-
-            if (!$user) {
-                return $this->json(['message' => 'Utilisateur non trouvé'], 404);
-            }
-
-            if ($user->isVerified()) {
-                return $this->json(['message' => 'Utilisateur déjà vérifié'], 400);
-            }
-
-            if ($user->getVerificationCode() !== $code) {
-                return $this->json(['message' => 'Code invalide'], 400);
-            }
-
-            // Validation réussie
-            $user->verify(); // met isVerified à true, efface le code et définit verifiedAt
-            $em->flush();
-
-            return $this->json([
-                'message' => 'Email vérifié avec succès',
-                'user_id' => $user->getId(),
-                'verified_at' => $user->getVerifiedAt()->format('Y-m-d H:i:s')
-            ]);
-        }
-        #[Route('/resend-code', name: 'app_resend_code', methods: ['POST'])]
-        public function resendCode(Request $request, EntityManagerInterface $em, MailerInterface $mailer): Response
-        {
-            $data = json_decode($request->getContent(), true);
-
-            if (!is_array($data)) {
-                return $this->json(['message' => 'Données invalides'], 400);
-            }
-
-            $email = $data['email'] ?? null;
-            if (!$email) {
-                return $this->json(['message' => 'Email est obligatoire'], 400);
-            }
-
-            $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
-            if (!$user) {
-                return $this->json(['message' => 'Utilisateur introuvable'], 404);
-            }
-
-            if ($user->isVerified()) {
-                return $this->json(['message' => 'Ce compte est déjà vérifié'], 400);
-            }
-
-            $code = bin2hex(random_bytes(3));
-            $user->setVerificationCode($code);
-
-            $em->persist($user);
-            $em->flush();
-
-            try {
-                $emailMessage = (new Email())
-                    ->from('noreply@holipix.com')
-                    ->to($user->getEmail())
-                    ->subject('Nouveau code de vérification')
-                    ->text("Votre nouveau code de vérification : $code");
-
-                $mailer->send($emailMessage);
-            } catch (\Exception $e) {
-                return $this->json([
-                    'message' => 'Impossible d’envoyer l’email. Erreur : ' . $e->getMessage()
-                ], 500);
-            }
-
-            return $this->json(['message' => 'Nouveau code envoyé par email']);
+    #[Route('/verify-email', name: 'app_verify_email', methods: ['POST'])]
+    public function verifyEmail(Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = $this->getJsonData($request);
+        if (!$data) {
+            return $this->json(['message' => 'JSON invalide'], 400);
         }
 
+        $email = $data['email'] ?? null;
+        $code  = $data['code'] ?? null;
 
+        if (!$email || !$code) {
+            return $this->json(['message' => 'Email et code sont obligatoires'], 400);
+        }
+
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+        if (!$user) {
+            return $this->json(['message' => 'Utilisateur non trouvé'], 404);
+        }
+
+        if ($user->isVerified()) {
+            return $this->json(['message' => 'Utilisateur déjà vérifié'], 400);
+        }
+
+        if ($user->getVerificationCode() !== $code) {
+            return $this->json(['message' => 'Code invalide'], 400);
+        }
+
+        $user->verify();
+        $em->flush();
+
+        return $this->json([
+            'message'     => 'Email vérifié avec succès',
+            'user_id'     => $user->getId(),
+            'verified_at' => $user->getVerifiedAt()->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    #[Route('/resend-code', name: 'app_resend_code', methods: ['POST'])]
+    public function resendCode(Request $request, EntityManagerInterface $em, MailerInterface $mailer): JsonResponse
+    {
+        $data = $this->getJsonData($request);
+        if (!$data) {
+            return $this->json(['message' => 'JSON invalide'], 400);
+        }
+
+        $email = $data['email'] ?? null;
+        if (!$email) {
+            return $this->json(['message' => 'Email est obligatoire'], 400);
+        }
+
+        $user = $em->getRepository(User::class)->findOneBy(['email' => $email]);
+        if (!$user) {
+            return $this->json(['message' => 'Utilisateur introuvable'], 404);
+        }
+
+        if ($user->isVerified()) {
+            return $this->json(['message' => 'Ce compte est déjà vérifié'], 400);
+        }
+
+        $code = bin2hex(random_bytes(3));
+        $user->setVerificationCode($code);
+        $em->persist($user);
+        $em->flush();
+
+        $emailMessage = (new Email())
+            ->from('noreply@holipix.com')
+            ->to($user->getEmail())
+            ->subject('Nouveau code de vérification')
+            ->text("Votre nouveau code de vérification : $code");
+
+        $mailer->send($emailMessage);
+
+        return $this->json(['message' => 'Nouveau code envoyé par email']);
+    }
 }
