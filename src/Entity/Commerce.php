@@ -72,6 +72,14 @@ class Commerce
     #[ORM\OneToMany(mappedBy: 'commerce', targetEntity: Review::class, cascade: ['persist', 'remove'])]
     private Collection $reviews;
 
+    #[ORM\OneToMany(mappedBy: 'commerce', targetEntity: Room::class, cascade: ['persist', 'remove'])]
+    #[Groups(['commerce:read', 'commerce:write'])]
+    private Collection $rooms;
+
+    #[ORM\OneToMany(mappedBy: 'commerce', targetEntity: Offer::class, cascade: ['persist', 'remove'])]
+    #[Groups(['commerce:read', 'commerce:write'])]
+    private Collection $offers;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -79,6 +87,8 @@ class Commerce
         $this->photos = new ArrayCollection();
         $this->reservations = new ArrayCollection();
         $this->reviews = new ArrayCollection();
+        $this->rooms = new ArrayCollection();
+        $this->offers = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -101,75 +111,63 @@ class Commerce
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
     public function setCreatedAt(\DateTimeImmutable $dt): self { $this->createdAt = $dt; return $this; }
 
-    // FeaturePhares
     public function getFeaturePhares(): Collection { return $this->featurePhares; }
-    public function addFeaturePhare(FeaturePhare $fp): self
-    {
-        if (!$this->featurePhares->contains($fp)) {
-            $this->featurePhares->add($fp);
-            $fp->setCommerce($this);
-        }
-        return $this;
+    public function addFeaturePhare(FeaturePhare $fp): self { 
+        if (!$this->featurePhares->contains($fp)) { $this->featurePhares->add($fp); $fp->setCommerce($this); } 
+        return $this; 
     }
-    public function removeFeaturePhare(FeaturePhare $fp): self
-    {
-        if ($this->featurePhares->removeElement($fp)) {
-            if ($fp->getCommerce() === $this) $fp->setCommerce(null);
-        }
-        return $this;
+    public function removeFeaturePhare(FeaturePhare $fp): self { 
+        if ($this->featurePhares->removeElement($fp)) { if ($fp->getCommerce() === $this) $fp->setCommerce(null); } 
+        return $this; 
     }
 
-    // Photos
     public function getPhotos(): Collection { return $this->photos; }
-    public function addPhoto(Photo $photo): self
-    {
-        if (!$this->photos->contains($photo)) {
-            $this->photos->add($photo);
-            $photo->setCommerce($this);
-        }
-        return $this;
+    public function addPhoto(Photo $photo): self { 
+        if (!$this->photos->contains($photo)) { $this->photos->add($photo); $photo->setCommerce($this); } 
+        return $this; 
     }
-    public function removePhoto(Photo $photo): self
-    {
-        if ($this->photos->removeElement($photo)) {
-            if ($photo->getCommerce() === $this) $photo->setCommerce(null);
-        }
-        return $this;
+    public function removePhoto(Photo $photo): self { 
+        if ($this->photos->removeElement($photo)) { if ($photo->getCommerce() === $this) $photo->setCommerce(null); } 
+        return $this; 
     }
 
-    // Reservations
     public function getReservations(): Collection { return $this->reservations; }
-    public function addReservation(Reservation $reservation): self
-    {
-        if (!$this->reservations->contains($reservation)) {
-            $this->reservations->add($reservation);
-            $reservation->setCommerce($this);
-        }
-        return $this;
+    public function addReservation(Reservation $reservation): self { 
+        if (!$this->reservations->contains($reservation)) { $this->reservations->add($reservation); $reservation->setCommerce($this); } 
+        return $this; 
     }
-    public function removeReservation(Reservation $reservation): self
-    {
-        if ($this->reservations->removeElement($reservation)) {
-            if ($reservation->getCommerce() === $this) $reservation->setCommerce(null);
-        }
-        return $this;
+    public function removeReservation(Reservation $reservation): self { 
+        if ($this->reservations->removeElement($reservation)) { if ($reservation->getCommerce() === $this) $reservation->setCommerce(null); } 
+        return $this; 
     }
 
-    // Reviews
     public function getReviews(): Collection { return $this->reviews; }
-    public function addReview(Review $review): self
-    {
-        if (!$this->reviews->contains($review)) {
-            $this->reviews->add($review);
-            $review->setCommerce($this);
-        }
-        return $this;
+    public function addReview(Review $review): self { 
+        if (!$this->reviews->contains($review)) { $this->reviews->add($review); $review->setCommerce($this); } 
+        return $this; 
     }
-    public function removeReview(Review $review): self
-    {
-        if ($this->reviews->removeElement($review)) {
-            if ($review->getCommerce() === $this) $review->setCommerce(null);
-        }
-        return $this;
+    public function removeReview(Review $review): self { 
+        if ($this->reviews->removeElement($review)) { if ($review->getCommerce() === $this) $review->setCommerce(null); } 
+        return $this; 
+    }
+
+    public function getRooms(): Collection { return $this->rooms; }
+    public function addRoom(Room $room): self { 
+        if (!$this->rooms->contains($room)) { $this->rooms->add($room); $room->setCommerce($this); } 
+        return $this; 
+    }
+    public function removeRoom(Room $room): self { 
+        if ($this->rooms->removeElement($room)) { if ($room->getCommerce() === $this) $room->setCommerce(null); } 
+        return $this; 
+    }
+
+    public function getOffers(): Collection { return $this->offers; }
+    public function addOffer(Offer $offer): self { 
+        if (!$this->offers->contains($offer)) { $this->offers->add($offer); $offer->setCommerce($this); } 
+        return $this; 
+    }
+    public function removeOffer(Offer $offer): self { 
+        if ($this->offers->removeElement($offer)) { if ($offer->getCommerce() === $this) $offer->setCommerce(null); } 
+        return $this; 
     }
 }

@@ -10,9 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ApiResource]
 class Reservation
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Id, ORM\GeneratedValue, ORM\Column]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'reservations')]
@@ -22,6 +20,12 @@ class Reservation
     #[ORM\ManyToOne(inversedBy: 'reservations')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Commerce $commerce = null;
+
+    #[ORM\ManyToOne(inversedBy: 'reservations')]
+    private ?Room $room = null;
+
+    #[ORM\ManyToOne(inversedBy: 'reservations')]
+    private ?Offer $offer = null;
 
     #[ORM\Column(type: 'datetime_immutable')]
     private ?\DateTimeImmutable $dateArrivee = null;
@@ -49,6 +53,10 @@ class Reservation
     public function setUser(?User $user): static { $this->user = $user; return $this; }
     public function getCommerce(): ?Commerce { return $this->commerce; }
     public function setCommerce(?Commerce $commerce): static { $this->commerce = $commerce; return $this; }
+    public function getRoom(): ?Room { return $this->room; }
+    public function setRoom(?Room $room): static { $this->room = $room; return $this; }
+    public function getOffer(): ?Offer { return $this->offer; }
+    public function setOffer(?Offer $offer): static { $this->offer = $offer; return $this; }
     public function getDateArrivee(): ?\DateTimeImmutable { return $this->dateArrivee; }
     public function setDateArrivee(\DateTimeImmutable $dateArrivee): static { $this->dateArrivee = $dateArrivee; return $this; }
     public function getDateDepart(): ?\DateTimeImmutable { return $this->dateDepart; }
