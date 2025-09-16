@@ -1,9 +1,11 @@
-<?php
+<?php 
 
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ReservationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ReservationRepository::class)]
@@ -48,6 +50,17 @@ class Reservation
     #[ORM\OneToOne(mappedBy: 'reservation', cascade: ['persist', 'remove'])]
     private ?Payment $payment = null;
 
+    // 🔹 Nouvelle relation OneToMany vers Photo
+    #[ORM\OneToMany(mappedBy: 'reservation', targetEntity: Photo::class, cascade: ['persist', 'remove'])]
+    private Collection $photos;
+
+    public function __construct()
+    {
+        $this->photos = new ArrayCollection();
+    }
+
+    // ────────────── Getters / Setters ──────────────
+
     public function getId(): ?int { return $this->id; }
     public function getUser(): ?User { return $this->user; }
     public function setUser(?User $user): static { $this->user = $user; return $this; }
@@ -74,6 +87,24 @@ class Reservation
     {
         if ($payment->getReservation() !== $this) $payment->setReservation($this);
         $this->payment = $payment;
+        return $this;
+    }
+
+    // ────────────── Photos ──────────────
+    public function getPhotos(): Collection { return $this->photos; }
+    public function addPhoto(Photo $photo): static
+    {
+        if (!$this->photos->contains($photo)) {
+            $this->photos->add($photo);
+            $photo->setReservation($this);
+        }
+        return $this;
+    }
+    public function removePhoto(Photo $photo): static
+    {
+        if ($this->photos->removeElement($photo)) {
+            if ($photo->getReservation() === $this) $photo->setReservation(null);
+        }
         return $this;
     }
 }
