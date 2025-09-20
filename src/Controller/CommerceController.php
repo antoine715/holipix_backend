@@ -56,7 +56,7 @@ class CommerceController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         $commerce->setName($data['name'] ?? $commerce->getName());
-        $commerce->setType($data['type'] ?? $commerce->getType()); // camping, hotel, attraction
+        $commerce->setType($data['type'] ?? $commerce->getType());
         $commerce->setAddress($data['address'] ?? $commerce->getAddress());
         $commerce->setCity($data['city'] ?? $commerce->getCity());
         $commerce->setCountry($data['country'] ?? $commerce->getCountry());
@@ -98,6 +98,44 @@ class CommerceController extends AbstractController
         $em->flush();
 
         return $this->json(['message' => 'Chambre ajoutée avec succès', 'room' => $room], 201);
+    }
+
+    #[Route('/rooms', name: 'commerce_list_rooms', methods: ['GET'])]
+    public function listRooms(EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        $commerce = $user?->getCommerce();
+
+        if (!$commerce) return $this->json(['message' => 'Aucun commerce trouvé'], 404);
+
+        $rooms = $em->getRepository(Room::class)->findBy(['commerce' => $commerce]);
+
+        $result = [];
+        foreach ($rooms as $room) {
+            // Calculer le nombre de réservations actives
+            $reservations = $room->getReservations()->toArray();
+            $now = new \DateTimeImmutable();
+            $reservationsActives = array_filter($reservations, function (Reservation $res) use ($now) {
+                return $res->getDateArrivee() <= $now && $res->getDateDepart() >= $now;
+            });
+
+            $disponible = max(0, $room->getCapacity() - count($reservationsActives));
+
+            $result[] = [
+                'id' => $room->getId(),
+                'name' => $room->getName(),
+                'capacity' => $room->getCapacity(),
+                'disponible' => $disponible,
+                'reservations' => array_map(fn(Reservation $res) => [
+                    'id' => $res->getId(),
+                    'dateArrivee' => $res->getDateArrivee()->format('Y-m-d'),
+                    'dateDepart' => $res->getDateDepart()->format('Y-m-d'),
+                    'client' => $res->getUser()->getFullName(),
+                ], $reservations)
+            ];
+        }
+
+        return $this->json($result, 200);
     }
 
     // ===================== Gestion des offres =====================
@@ -150,7 +188,7 @@ class CommerceController extends AbstractController
         }
 
         $photo->setDescription($request->request->get('description', null));
-        $photo->setIsMain($request->request->get('isMain', false)); // photo principale ou intermédiaire
+        $photo->setIsMain($request->request->getBoolean('isMain', false));
 
         $em->persist($photo);
         $em->flush();
@@ -202,9 +240,8 @@ class CommerceController extends AbstractController
                 ],
                 'room' => $reservation->getRoom()?->getName(),
                 'offer' => $reservation->getOffer()?->getName(),
-                'startDate' => $reservation->getStartDate()?->format('Y-m-d'),
-                'endDate' => $reservation->getEndDate()?->format('Y-m-d'),
-                'status' => $reservation->getStatus(),
+                'startDate' => $reservation->getDateArrivee()?->format('Y-m-d'),
+                'endDate' => $reservation->getDateDepart()?->format('Y-m-d'),
             ];
         }
 

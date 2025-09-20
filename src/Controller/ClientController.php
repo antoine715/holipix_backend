@@ -45,20 +45,45 @@ class ClientController extends AbstractController
         $commerce = $em->getRepository(Commerce::class)->find($data['commerce']);
         if (!$commerce) return $this->json(['message' => 'Commerce non trouvé'], 404);
 
-        // Optionnel : associer une offre si fournie
-        $offer = isset($data['offer']) ? $em->getRepository(Offer::class)->find($data['offer']) : null;
+        $dateArrivee = new \DateTimeImmutable($data['dateArrivee']);
+        $dateDepart = new \DateTimeImmutable($data['dateDepart']);
 
-        // Assigner une chambre disponible automatiquement
-        $room = $em->getRepository(Room::class)->findOneBy(['commerce' => $commerce]);
-        if (!$room) return $this->json(['message' => 'Aucune chambre disponible dans ce commerce'], 404);
+        // ===================== Vérification des chambres disponibles =====================
+        $roomRepo = $em->getRepository(Room::class);
+        $allRooms = $roomRepo->findBy(['commerce' => $commerce]);
+        $availableRoom = null;
+
+        foreach ($allRooms as $room) {
+            $existingReservations = $em->getRepository(Reservation::class)
+                ->createQueryBuilder('r')
+                ->where('r.room = :room')
+                ->andWhere('r.dateArrivee < :end AND r.dateDepart > :start')
+                ->setParameters([
+                    'room' => $room,
+                    'start' => $dateArrivee,
+                    'end' => $dateDepart
+                ])
+                ->getQuery()
+                ->getResult();
+
+            if (count($existingReservations) < $room->getCapacity()) {
+                $availableRoom = $room;
+                break;
+            }
+        }
+
+        if (!$availableRoom) return $this->json(['message' => 'Aucune chambre disponible pour ces dates'], 404);
+
+        // Optionnel : associer une offre
+        $offer = isset($data['offer']) ? $em->getRepository(Offer::class)->find($data['offer']) : null;
 
         $reservation = new Reservation();
         $reservation->setUser($user);
         $reservation->setCommerce($commerce);
-        $reservation->setRoom($room);
+        $reservation->setRoom($availableRoom);
         $reservation->setOffer($offer);
-        $reservation->setDateArrivee(new \DateTimeImmutable($data['dateArrivee']));
-        $reservation->setDateDepart(new \DateTimeImmutable($data['dateDepart']));
+        $reservation->setDateArrivee($dateArrivee);
+        $reservation->setDateDepart($dateDepart);
         $reservation->setNombreAdultes($data['nombreAdultes'] ?? 1);
         $reservation->setNombreEnfants($data['nombreEnfants'] ?? 0);
         $reservation->setNombreChambres($data['nombreChambres'] ?? 1);
@@ -67,7 +92,7 @@ class ClientController extends AbstractController
         $em->persist($reservation);
         $em->flush();
 
-        // Envoi de l'email de confirmation
+        // ===================== Email de confirmation =====================
         $email = (new TemplatedEmail())
             ->from(new Address('no-reply@holipix.com', 'Holipix'))
             ->to($user->getEmail())
@@ -77,7 +102,6 @@ class ClientController extends AbstractController
                 'user' => $user,
                 'reservation' => $reservation,
             ]);
-
         $this->mailer->send($email);
 
         return $this->json([
@@ -88,9 +112,9 @@ class ClientController extends AbstractController
                 'dateDepart' => $reservation->getDateDepart()->format('Y-m-d'),
                 'total' => $reservation->getTotal(),
                 'room' => [
-                    'id' => $room->getId(),
-                    'name' => $room->getName(),
-                    'capacity' => $room->getCapacity(),
+                    'id' => $availableRoom->getId(),
+                    'name' => $availableRoom->getName(),
+                    'capacity' => $availableRoom->getCapacity(),
                 ],
                 'offer' => $offer ? [
                     'id' => $offer->getId(),
@@ -143,6 +167,51 @@ class ClientController extends AbstractController
         return $this->json($result);
     }
 
-    // ===================== Ajouter / annuler / lister les photos =====================
-    // (reste identique à ton précédent ClientController)
+    // ===================== Détails d'une réservation =====================
+    #[Route('/reservations/{id}', name: 'client_get_reservation', methods: ['GET'])]
+    public function getReservation(int $id, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user) return $this->json(['message' => 'Utilisateur non authentifié'], 401);
+
+        $reservation = $em->getRepository(Reservation::class)->find($id);
+        if (!$reservation || $reservation->getUser() !== $user) {
+            return $this->json(['message' => 'Réservation introuvable'], 404);
+        }
+
+        $result = [
+            'id' => $reservation->getId(),
+            'commerce' => [
+                'id' => $reservation->getCommerce()->getId(),
+                'name' => $reservation->getCommerce()->getName(),
+                'type' => $reservation->getCommerce()->getType(),
+                'address' => $reservation->getCommerce()->getAddress(),
+                'phone' => $reservation->getCommerce()->getPhone(),
+            ],
+            'room' => $reservation->getRoom() ? [
+                'id' => $reservation->getRoom()->getId(),
+                'name' => $reservation->getRoom()->getName(),
+                'capacity' => $reservation->getRoom()->getCapacity(),
+            ] : null,
+            'offer' => $reservation->getOffer() ? [
+                'id' => $reservation->getOffer()->getId(),
+                'name' => $reservation->getOffer()->getName(),
+            ] : null,
+            'startDate' => $reservation->getDateArrivee()?->format('Y-m-d'),
+            'endDate' => $reservation->getDateDepart()?->format('Y-m-d'),
+            'nombreAdultes' => $reservation->getNombreAdultes(),
+            'nombreEnfants' => $reservation->getNombreEnfants(),
+            'nombreChambres' => $reservation->getNombreChambres(),
+            'total' => $reservation->getTotal(),
+            'photos' => array_map(fn(Photo $p) => [
+                'id' => $p->getId(),
+                'url' => $p->getUrl(),
+                'description' => $p->getDescription(),
+                'validated' => $p->isValidated()
+            ], $reservation->getPhotos()->toArray())
+];
+
+return $this->json($result);
 }
+
+} // <-- fermeture de la classe ClientController
